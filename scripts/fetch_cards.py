@@ -38,7 +38,9 @@ TARGET_SETS = [
     "sv8",      # Surging Sparks (Nov 2024)
     "sv8pt5",   # Prismatic Evolutions (Jan 2025)
     "sv9",      # Journey Together (Mar 2025)
-    "sv10",     # Destined Rivals (May 2025) — verify code at pokemontcg.io if no cards return
+    "sv10",     # Destined Rivals (May 2025) — confirmed sv10
+    "sv11",     # Black Bolt (2025) — verify code at pokemontcg.io if no cards return
+    "sv12",     # White Flare (2025) — verify code at pokemontcg.io if no cards return
 ]
 
 # ─── Rarity tiers to include ─────────────────────────────────────────────────
@@ -51,6 +53,9 @@ CHASE_RARITIES = {
     "ACE SPEC Rare",              # ACE SPEC — powerful trainer, 1 per deck rule
     "Shiny Rare",                 # Shiny (Paldean Fates / special sets)
     "Shiny Ultra Rare",           # Shiny full art (Paldean Fates)
+    "Master Ball Foil",           # MB — ultra rare foil stamp, ~1/19 any (sv8pt5+)
+    "Poke Ball Foil",             # PB — foil stamp, ~1/3 any but specific can be valuable
+    "Black & White Rare",         # BWR — Black Bolt / White Flare exclusive (rates unknown)
 }
 
 # ─── Per-set pull rates (ANY card of that rarity per pack) ───────────────────
@@ -136,11 +141,13 @@ PULL_RATES: dict[str, dict[str, float]] = {
         "Ultra Rare":                  1 / 15,
         "ACE SPEC Rare":               1 / 20,
     },
-    "sv8pt5": {  # Prismatic Evolutions — estimated (provide exact data to update)
-        "Hyper Rare":                  1 / 140,
-        "Special Illustration Rare":   1 / 85,
-        "Illustration Rare":           1 / 8,   # Higher IR density vs standard sets
-        "Ultra Rare":                  1 / 15,
+    "sv8pt5": {  # Prismatic Evolutions — TCGPlayer data (1,200+ pack sample)
+        "Hyper Rare":                  1 / 180,
+        "Special Illustration Rare":   1 / 45,
+        "Master Ball Foil":            1 / 20,
+        "Ultra Rare":                  1 / 13,
+        "ACE SPEC Rare":               1 / 21,
+        "Poke Ball Foil":              1 / 3,
     },
     "sv9": {  # Journey Together — TCGPlayer data
         "Hyper Rare":                  1 / 137,
@@ -155,6 +162,23 @@ PULL_RATES: dict[str, dict[str, float]] = {
         "Illustration Rare":           1 / 12,
         "Ultra Rare":                  1 / 16,
         "Double Rare":                 1 / 5,
+    },
+    "sv11": {  # Black Bolt — TCGPlayer data
+        "Special Illustration Rare":   1 / 80,
+        "Master Ball Foil":            1 / 19,
+        "Ultra Rare":                  1 / 17,
+        "Illustration Rare":           1 / 6,
+        "Poke Ball Foil":              1 / 3,
+        # BWR (Black & White Rare): rates unknown, using SIR as proxy until confirmed
+        "Black & White Rare":          1 / 80,
+    },
+    "sv12": {  # White Flare — TCGPlayer data (same product, same pull rates as Black Bolt)
+        "Special Illustration Rare":   1 / 80,
+        "Master Ball Foil":            1 / 19,
+        "Ultra Rare":                  1 / 17,
+        "Illustration Rare":           1 / 6,
+        "Poke Ball Foil":              1 / 3,
+        "Black & White Rare":          1 / 80,
     },
 }
 
@@ -188,6 +212,8 @@ BOX_PRICES = {
     "sv8pt5": 150,  # ETB / bundle products; single pack ≈ $5–6
     "sv9":    110,
     "sv10":   110,  # Destined Rivals
+    "sv11":   110,  # Black Bolt
+    "sv12":   110,  # White Flare
 }
 
 PACKS_PER_BOX = 36
@@ -377,6 +403,7 @@ def process_cards() -> list[dict]:
                 "sv1": 9, "sv2": 8, "sv3": 8, "sv3pt5": 8,
                 "sv4": 7, "sv4pt5": 7, "sv5": 7, "sv6": 6,
                 "sv6pt5": 6, "sv7": 5, "sv8": 5, "sv8pt5": 4, "sv9": 4, "sv10": 3,
+                "sv11": 2, "sv12": 2,
             }
             print_cycle = set_age_map.get(set_id, 5)
             confidence = round(
