@@ -1,7 +1,7 @@
 import { CardValuation } from "./types";
 
-const MODEL_ALPHA = 1.8;
-const MODEL_BETA = 0.52;
+const MODEL_ALPHA = 0.2411;
+const MODEL_BETA = 0.4486;
 
 const MVP_WEIGHTS = {
   pull_cost: 0.35,

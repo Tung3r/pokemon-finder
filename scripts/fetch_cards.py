@@ -14,7 +14,9 @@ Without a key the API still works but is rate-limited to 1,000 requests/day.
 import json
 import math
 import os
+import re
 import time
+import numpy as np
 import requests
 
 API_BASE = "https://api.pokemontcg.io/v2"
@@ -468,11 +470,103 @@ def write_typescript(cards: list[dict], path: str = "data/cards.ts") -> None:
     print(f"Wrote {len(cards)} cards -> {path}")
 
 
+def calibrate_model(cards: list[dict]) -> tuple[float, float, float]:
+    """
+    Fit alpha and beta via OLS regression on real price data.
+    Model: ln(market_price) = alpha + beta * composite_score
+    Returns: (alpha, beta, r_squared)
+    """
+    composites = []
+    ln_prices = []
+
+    for card in cards:
+        price = card["current_market_price"]
+        if price > 0:
+            composite = (
+                WEIGHTS["pull_cost"] * card["pull_cost_score"]
+                + WEIGHTS["character"] * card["character_premium"]
+                + WEIGHTS["appeal"] * card["universal_appeal"]
+            )
+            composites.append(composite)
+            ln_prices.append(math.log(price))
+
+    x = np.array(composites)
+    y = np.array(ln_prices)
+
+    # OLS: np.polyfit(x, y, 1) returns [slope, intercept]
+    coeffs = np.polyfit(x, y, 1)
+    beta  = round(float(coeffs[0]), 4)
+    alpha = round(float(coeffs[1]), 4)
+
+    # R² — how much price variance the model explains
+    y_pred = alpha + beta * x
+    ss_res = float(np.sum((y - y_pred) ** 2))
+    ss_tot = float(np.sum((y - np.mean(y)) ** 2))
+    r_squared = round(1 - ss_res / ss_tot, 4)
+
+    return alpha, beta, r_squared
+
+
+def recompute_valuations(cards: list[dict], alpha: float, beta: float) -> list[dict]:
+    """Recompute modeled prices and valuation gaps using calibrated alpha/beta."""
+    for card in cards:
+        composite = (
+            WEIGHTS["pull_cost"] * card["pull_cost_score"]
+            + WEIGHTS["character"] * card["character_premium"]
+            + WEIGHTS["appeal"] * card["universal_appeal"]
+        )
+        modeled = round(math.exp(alpha + beta * composite), 2)
+        market  = card["current_market_price"]
+        gap_dollar  = round(modeled - market, 2)
+        gap_percent = round(gap_dollar / market * 100, 1) if market > 0 else 0
+
+        card["modeled_price"]          = modeled
+        card["valuation_gap_dollar"]   = gap_dollar
+        card["valuation_gap_percent"]  = gap_percent
+        card["ranking_score"] = float(round(
+            max(0, min(100, 50 + gap_percent * 0.3 + card["confidence_score"] * 3)), 0
+        ))
+        card["ranking_reason"] = (
+            f"{card['pokemon_character']} — {card['set_name']}. "
+            f"Pull cost {card['pull_cost_score']}/10, Character premium {card['character_premium']}/10. "
+            f"{'Undervalued' if gap_percent > 10 else 'Overvalued' if gap_percent < -10 else 'Fair value'} "
+            f"by {abs(gap_percent):.1f}%."
+        )
+
+    cards.sort(key=lambda c: c["valuation_gap_percent"], reverse=True)
+    return cards
+
+
+def update_ts_model(alpha: float, beta: float, path: str = "lib/model.ts") -> None:
+    """Write calibrated alpha/beta back into the TypeScript frontend model."""
+    with open(path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    content = re.sub(r"const MODEL_ALPHA = [\d.]+;", f"const MODEL_ALPHA = {alpha};", content)
+    content = re.sub(r"const MODEL_BETA = [\d.]+;",  f"const MODEL_BETA = {beta};",  content)
+
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    print(f"Updated lib/model.ts  ->  alpha={alpha}, beta={beta}")
+
+
 if __name__ == "__main__":
     print("Pokemon Card Data Pipeline")
     print("=" * 50)
     if not API_KEY:
         print("Note: No POKEMONTCG_API_KEY set — using anonymous tier (1,000 req/day)")
     cards = process_cards()
+
+    # ── Calibrate model on real price data ────────────────────────────────────
+    alpha, beta, r2 = calibrate_model(cards)
+    print(f"\nCalibrated model:  alpha={alpha}  beta={beta}  R²={r2}")
+    print(f"(previous values:  alpha=1.8       beta=0.52)")
+
+    # ── Recompute all valuations with fitted constants ─────────────────────────
+    cards = recompute_valuations(cards, alpha, beta)
+
+    # ── Write outputs ──────────────────────────────────────────────────────────
     write_typescript(cards)
+    update_ts_model(alpha, beta)
     print("Done. Run 'npm run build' to rebuild the site.")
