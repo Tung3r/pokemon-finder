@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Suveg/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/891633c2-d7d6-418a-a323-b1ce2f0fca17/3008abca-cb24-4b9c-9033-be01e4f80dc3/skills/docx/**)",
+      "Bash(pandoc \"C:\\\\Users\\\\Suveg\\\\Downloads\\\\Pokemon stats.docx\" -o /tmp/pokemon_stats.md)",
+      "Bash(python -c \":*)",
+      "Bash(npx next:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(netstat -aon)"
+    ]
+  }
+}
