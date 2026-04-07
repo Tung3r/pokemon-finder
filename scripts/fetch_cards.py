@@ -38,7 +38,7 @@ TARGET_SETS = [
     "sv8",      # Surging Sparks (Nov 2024)
     "sv8pt5",   # Prismatic Evolutions (Jan 2025)
     "sv9",      # Journey Together (Mar 2025)
-    # Destined Rivals: verify exact set code on pokemontcg.io before adding
+    "sv10",     # Destined Rivals (May 2025) — verify code at pokemontcg.io if no cards return
 ]
 
 # ─── Rarity tiers to include ─────────────────────────────────────────────────
@@ -149,6 +149,13 @@ PULL_RATES: dict[str, dict[str, float]] = {
         "Ultra Rare":                  1 / 15,
         "Double Rare":                 1 / 5,
     },
+    "sv10": {  # Destined Rivals — TCGPlayer data
+        "Hyper Rare":                  1 / 149,
+        "Special Illustration Rare":   1 / 94,
+        "Illustration Rare":           1 / 12,
+        "Ultra Rare":                  1 / 16,
+        "Double Rare":                 1 / 5,
+    },
 }
 
 # Fallback for any set not listed above
@@ -180,6 +187,7 @@ BOX_PRICES = {
     "sv8":    110,
     "sv8pt5": 150,  # ETB / bundle products; single pack ≈ $5–6
     "sv9":    110,
+    "sv10":   110,  # Destined Rivals
 }
 
 PACKS_PER_BOX = 36
@@ -368,7 +376,7 @@ def process_cards() -> list[dict]:
             set_age_map = {
                 "sv1": 9, "sv2": 8, "sv3": 8, "sv3pt5": 8,
                 "sv4": 7, "sv4pt5": 7, "sv5": 7, "sv6": 6,
-                "sv6pt5": 6, "sv7": 5, "sv8": 5, "sv8pt5": 4, "sv9": 4,
+                "sv6pt5": 6, "sv7": 5, "sv8": 5, "sv8pt5": 4, "sv9": 4, "sv10": 3,
             }
             print_cycle = set_age_map.get(set_id, 5)
             confidence = round(
